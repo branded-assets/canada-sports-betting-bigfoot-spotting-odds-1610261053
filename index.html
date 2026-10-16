@@ -223,6 +223,7 @@ html::-webkit-scrollbar-thumb{background:#c9102f;border-radius:7px}
 <div class="field"><label for="filter-na">Country</label><select class="filter" id="filter-na"><option value="">U.S. &amp; Canada</option><option value="U.S.">U.S.</option><option value="Canada">Canada</option></select></div>
 <div class="field search-field"><label for="search-na">Search state or province</label><input autocomplete="off" class="search" id="search-na" placeholder="Find a location…" type="search"/></div>
 <a class="download" download="" href="Bigfoot_North_America_2026_Public.csv">↓ Download CSV</a>
+<button class="download download-png" type="button" aria-label="Download top 10 North American rankings as PNG image">↓ Download PNG</button>
 </div>
 <div aria-label="Ranking display options" class="view-strip">
 <div aria-label="Switch ranking view" class="view-switch" role="group"><button aria-pressed="false" class="mode" data-mode="bars" type="button">▰ Bars</button><button aria-pressed="true" class="mode" data-mode="table" type="button">▦ Detailed table</button></div>
@@ -245,6 +246,7 @@ html::-webkit-scrollbar-thumb{background:#c9102f;border-radius:7px}
 <div class="field"><label for="filter-city">State</label><select class="filter" id="filter-city"><option value="">All states</option><option value="AK">AK</option><option value="AL">AL</option><option value="AR">AR</option><option value="AZ">AZ</option><option value="CA">CA</option><option value="CO">CO</option><option value="CT">CT</option><option value="DC">DC</option><option value="FL">FL</option><option value="GA">GA</option><option value="IA">IA</option><option value="ID">ID</option><option value="IL">IL</option><option value="IN">IN</option><option value="KS">KS</option><option value="KY">KY</option><option value="LA">LA</option><option value="MA">MA</option><option value="MD">MD</option><option value="ME">ME</option><option value="MI">MI</option><option value="MN">MN</option><option value="MO">MO</option><option value="MT">MT</option><option value="NC">NC</option><option value="NE">NE</option><option value="NM">NM</option><option value="NY">NY</option><option value="OH">OH</option><option value="OK">OK</option><option value="OR">OR</option><option value="PA">PA</option><option value="RI">RI</option><option value="SC">SC</option><option value="SD">SD</option><option value="TN">TN</option><option value="TX">TX</option><option value="UT">UT</option><option value="VA">VA</option><option value="WA">WA</option><option value="WI">WI</option><option value="WV">WV</option></select></div>
 <div class="field search-field"><label for="search-city">Search metro area</label><input autocomplete="off" class="search" id="search-city" placeholder="Find a location…" type="search"/></div>
 <a class="download" download="" href="Bigfoot_US_Cities_2026_Public.csv">↓ Download CSV</a>
+<button class="download download-png" type="button" aria-label="Download top 10 U.S. metro rankings as PNG image">↓ Download PNG</button>
 </div>
 <div aria-label="Ranking display options" class="view-strip">
 <div aria-label="Switch ranking view" class="view-switch" role="group"><button aria-pressed="false" class="mode" data-mode="bars" type="button">▰ Bars</button><button aria-pressed="true" class="mode" data-mode="table" type="button">▦ Detailed table</button></div>
@@ -280,12 +282,82 @@ function make(tag,cls,text){const n=document.createElement(tag);if(cls)n.classNa
 function rate(value){return Number(value).toFixed(2)}
 function odds(row,type){return Number(row.odds).toFixed(2)+'%'}
 function csvCell(s){const v=String(s==null?'':s);return '"'+v.replace(/"/g,'""')+'"'}
+// Download image: independent, print-quality top-10 snapshot. This does not
+// capture, alter, filter or restyle either on-page ranking or detailed table.
+function downloadTopTenPNG(type, source, button){
+ const canvas=document.createElement('canvas');
+ const W=1360,H=1212,scale=2;
+ canvas.width=W*scale;canvas.height=H*scale;
+ const c=canvas.getContext('2d');
+ if(!c){return}
+ c.scale(scale,scale);
+ c.fillStyle='#ffffff';c.fillRect(0,0,W,H);
+ const dark='#161616',red='#c9102f',pale='#fbe7eb',muted='#607084';
+ function rect(x,y,w,h,color){c.fillStyle=color;c.fillRect(x,y,w,h)}
+ function txt(text,x,y,size,color=dark,weight=400,align='left'){
+   c.font=weight+' '+size+'px Arial, Helvetica, sans-serif';
+   c.fillStyle=color;c.textAlign=align;c.textBaseline='middle';
+   c.fillText(String(text),x,y);
+   c.textAlign='left';
+ }
+ // A fixed, spacious masthead makes the export identical on mobile and desktop.
+ rect(0,0,W,236,dark);
+ const glow=c.createLinearGradient(0,0,W,0);
+ glow.addColorStop(0,'#171717');glow.addColorStop(1,'#322027');
+ rect(0,0,W,236,glow);
+ rect(0,0,W,8,red);rect(0,229,W,7,red);
+ txt('2026 Research',67,47,17,'#ffa5b4',700);
+ txt('Canada Sports Betting',1294,47,22,'#ffffff',800,'right');
+ txt('Top 10 Bigfoot Spotting Odds',67,118,48,'#ffffff',900);
+ const subtitle=type==='na'?'U.S. States and Canadian Provinces / Territories':'U.S. Metro Areas';
+ txt(subtitle,68,178,25,'#eadbdf',500);
+ // Just the two relevant columns and one league/category, never the full table.
+ rect(40,263,W-80,52,'#171717');
+ txt('Rank / Location',70,289,19,'#ffffff',800);
+ txt('Relative Share',737,289,19,'#ffffff',800);
+ txt('Implied Odds',1199,289,19,'#ffffff',800,'center');
+ const rows=source.slice().sort((a,b)=>Number(a.rank)-Number(b.rank)).slice(0,10);
+ const max=Math.max(0,...rows.map(r=>Number(r.odds)||0));
+ rows.forEach((item,i)=>{
+   const y=321+i*76;
+   rect(40,y,W-80,74,i%2?'#f7f8fa':'#ffffff');
+   rect(40,y+73,W-80,1,'#e5e8ed');
+   rect(67,y+18,44,42,dark);
+   txt(String(item.rank),89,y+39,20,'#ffffff',900,'center');
+   txt(item.name,133,y+28,24,dark,800);
+   const area=type==='na'?(item.country||''):(item.state||'');
+   txt(area+'  ·  '+Number(item.rate).toFixed(2)+' reports per 100K',134,y+57,16,muted,400);
+   rect(738,y+34,344,15,'#e9e7ea');
+   rect(738,y+34,max?344*Math.max(0,Number(item.odds))/max:0,15,red);
+   rect(1119,y+16,166,47,red);
+   txt(Number(item.odds).toFixed(2)+'%',1202,y+40,29,'#ffffff',900,'center');
+ });
+ rect(40,1091,W-80,4,red);
+ txt('Source: Canada Sports Betting research  ·  October 2026',45,1130,19,'#36485a',700);
+ txt('Implied spotting odds reflect relative index shares, not measured encounter probabilities.',45,1166,16,muted,400);
+ const filename=type==='na'?'Bigfoot_North_America_Top_10.png':'Bigfoot_US_Metro_Areas_Top_10.png';
+ const save=(blob)=>{
+   if(blob){
+     const url=URL.createObjectURL(blob),a=document.createElement('a');
+     a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+     setTimeout(()=>URL.revokeObjectURL(url),2000);
+   }else{
+     const a=document.createElement('a');a.href=canvas.toDataURL('image/png');
+     a.download=filename;document.body.appendChild(a);a.click();a.remove();
+   }
+   button.disabled=false;
+ };
+ button.disabled=true;
+ if(canvas.toBlob)canvas.toBlob(save,'image/png');else save(null);
+}
 function init(type){
  const panel=root.querySelector('[data-ranking="'+type+'"]');if(!panel)return;
  panel.classList.add('interactive');
  const all=SOURCE[type];const state={mode:'bars',filter:'',query:'',sort:'rank',dir:1,page:1};
  const filter=panel.querySelector('.filter'),search=panel.querySelector('.search'),tbody=panel.querySelector('tbody'),tableView=panel.querySelector('.table-view'),barsView=panel.querySelector('.bars-view'),bars=panel.querySelector('.bars'),footer=panel.querySelector('.result-count'),pager=panel.querySelector('.pager'),dl=panel.querySelector('.download'),tableScroll=panel.querySelector('.table-scroll');
  const max=Math.max(...all.map(x=>Number(x.odds)));
+ const pngButton=panel.querySelector('.download-png');
+ if(pngButton)pngButton.addEventListener('click',()=>downloadTopTenPNG(type,all,pngButton));
  function filtered(){
    return all.filter(x=>(!state.filter || String(x.country||x.state)===state.filter) && String(x.name+' '+(x.country||x.state)).toLowerCase().includes(state.query)).sort((a,b)=>{
       const av=a[state.sort],bv=b[state.sort];let diff=(typeof av==='number' && typeof bv==='number')? av-bv : String(av).localeCompare(String(bv));return diff ? diff*state.dir : a.rank-b.rank;
