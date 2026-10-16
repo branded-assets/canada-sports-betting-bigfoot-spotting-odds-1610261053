@@ -179,7 +179,7 @@
 }
 
 /* True top-of-page anchor for smooth navigation. Do not put this ID on the sticky nav. */
-#csb-bigfoot .top-scroll-anchor{display:block;height:0;width:0;overflow:hidden;scroll-margin-top:0}
+#csb-bigfoot .top-scroll-anchor{display:block;height:0;width:0;overflow:hidden;scroll-margin-top:88px}
 
 #csb-bigfoot .bars-view,#csb-bigfoot .table-view{scroll-margin-top:85px}
 /* 2026 table controls: compact branded horizontal arrows above each table. */
@@ -206,7 +206,7 @@ html::-webkit-scrollbar{width:9px;height:9px}
 html::-webkit-scrollbar-track{background:#fae9ed}
 html::-webkit-scrollbar-thumb{background:#c9102f;border-radius:7px}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-</style><meta content="iframe-nav-fixed-2026-10-16-v2" name="csb-bigfoot-build"/></head><body style="margin:0;background:#fff">
+</style><meta content="isolated-2026-10-16-v1" name="csb-bigfoot-build"/></head><body style="margin:0;background:#fff">
 <main id="csb-bigfoot"><div aria-hidden="true" class="scroll-progress"></div>
 <span aria-hidden="true" class="top-scroll-anchor" id="csb-sections"></span>
 <nav aria-label="Page sections" class="nav" id="csb-navigation"><div class="wrap nav-inner"><strong>Sections</strong><a href="#csb-findings">Key Findings</a><a href="#csb-north-america">North American Rankings</a><a href="#csb-us-cities">U.S. Cities</a><a href="#csb-methodology">Methodology</a></div></nav>
@@ -420,20 +420,6 @@ if(progress && !reduced){
   window.addEventListener('resize',scheduleProgress,{passive:true});
   updateProgress();
 }
-// A tall cross-origin iframe cannot scroll the WordPress parent by itself.
-// Ask the parent to move to the embed container when a Back link is clicked.
-// Keep native/internal smooth scrolling as the fully isolated fallback.
-root.querySelectorAll('a.back-link[href="#csb-sections"]').forEach(link=>{
-  link.addEventListener('click',function(event){
-    if(window.parent===window)return; // Standalone page uses existing handler below.
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    try{
-      window.parent.postMessage({source:'csb-bigfoot-2026',action:'scroll-to-sections'},'*');
-    }catch(e){/* iframe may restrict parent messages */}
-    window.scrollTo({top:0,left:0,behavior:reduced?'auto':'smooth'});
-  },true);
-});
 // Smooth in-document navigation, including Back to Sections. Native anchors
 // remain functional if scripts are stripped by a CMS.
 root.querySelectorAll('a[href^="#csb-"]').forEach(a=>a.addEventListener('click',function(event){
@@ -442,13 +428,9 @@ root.querySelectorAll('a[href^="#csb-"]').forEach(a=>a.addEventListener('click',
   if(!target)return;
   event.preventDefault();
   const motion=reduced?'auto':'smooth';
-  if(href==='#csb-sections'){
-    // The actual document top, not the always-visible sticky menu.
-    // Native top anchor remains a fallback if the CMS strips JavaScript.
-    window.scrollTo({top:0,left:0,behavior:motion});
-  }else{
-    target.scrollIntoView({block:'start',behavior:motion});
-  }
+  // scrollIntoView also scrolls the enclosing browser viewport for a tall iframe.
+  // window.scrollTo() only scrolls the inner GitHub page and cannot move WordPress.
+  target.scrollIntoView({block:'start',behavior:motion});
   try{history.replaceState(null,'',href)}catch(error){/* sandboxed CMS iframes may block history changes */}
 }));
 })();
